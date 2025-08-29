@@ -22,6 +22,8 @@ dotenv = { workspace = true }
 env_logger = { workspace = true }
 hex = { workspace = true }
 ncn-program-client = { workspace = true }
+ncn-program-core = { workspace = true }
+jito-bytemuck = { workspace = true }
 rand = { workspace = true }
 serde_with = { version = "3.0", features = ["hex"] }
 solana-account-decoder = { workspace = true }
@@ -40,6 +42,7 @@ alloy-signer-local = "0.12.6"
 alloy-provider = "0.12.6"
 ark-bn254 = "0.5.0"
 ark-ec = "0.5.0"
+solana-bn254 = { workspace = true }
 ark-ff = "0.5.0"
 ark-serialize = "0.5.0"
 bn254 = { git = "https://github.com/BreadchainCoop/bn254.git" }
