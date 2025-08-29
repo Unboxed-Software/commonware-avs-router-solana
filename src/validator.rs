@@ -6,6 +6,7 @@ use commonware_codec::{DecodeExt, ReadExt};
 use commonware_cryptography::sha256::Digest;
 use commonware_cryptography::{Hasher, Sha256};
 use std::io::Cursor;
+use tracing::info;
 
 pub struct Validator {
     counter: u64,
@@ -22,36 +23,46 @@ impl Validator {
         // let counter_address = deployment
         //     .counter_address()
         //     .map_err(|e| anyhow::anyhow!("Failed to get counter address: {}", e))?;
+        info!("Initializing Validator...");
         let counter = 0;
-
         Ok(Self { counter })
     }
 
     pub async fn validate_and_return_expected_hash(&self, msg: &[u8]) -> Result<Digest> {
+        info!("Validating message and returning expected hash...");
         // First verify the message round
         self.verify_message_round(msg).await?;
+        info!("Message round verified.");
 
         // Then get the payload hash
         self.get_payload_from_message(msg).await
     }
 
     pub async fn get_payload_from_message(&self, msg: &[u8]) -> Result<Digest> {
+        info!("Getting payload from message...");
         // Decode the wire message
         let aggregation = wire::Aggregation::decode(msg)?;
+        info!("Decoded aggregation: {:?}", aggregation);
 
         // Create the payload directly
         let payload = U256::from(aggregation.round).abi_encode();
+        info!("Constructed payload: {:?}", payload);
 
         // Hash the payload
         let mut hasher = Sha256::new();
+        info!("Hashing payload...");
         hasher.update(&payload);
+        info!("Payload hashed.");
         let payload_hash = hasher.finalize();
+        info!("Payload hash: {:?}", payload_hash);
 
         Ok(payload_hash)
     }
 
     async fn verify_message_round(&self, msg: &[u8]) -> Result<()> {
+        info!("Verifying message round...");
         let aggregation = wire::Aggregation::read(&mut Cursor::new(msg))?;
+        info!("Decoded aggregation: {:?}", aggregation);
         let current_number = self.counter;
 
         if aggregation.round != current_number {

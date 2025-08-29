@@ -294,7 +294,7 @@ fn main() {
     const MAX_MESSAGE_SIZE: usize = 1024 * 1024; // 1 MB
     let my_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), port);
     let my_local_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
-    let p2p_cfg = lookup::Config::aggressive(
+    let p2p_cfg = lookup::Config::recommended(
         signer.clone(),
         APPLICATION_NAMESPACE,
         my_addr,
@@ -302,17 +302,26 @@ fn main() {
         MAX_MESSAGE_SIZE,
     );
 
+    eigen_logging::init_logger(LogLevel::Debug);
+    tracing::info!("Orchestrator listening {}", my_addr.to_string());
+    tracing::info!("my_local_addr {:?}", my_local_addr);
+    tracing::info!("Message size {:?}", MAX_MESSAGE_SIZE);
+
     // Start runtime
     runner.start(|context| async move {
         let (mut network, mut oracle) = Network::new(context.with_label("network"), p2p_cfg);
+        tracing::info!("----------- debug 1 -----------");
         let mut recipients: Vec<(bn254::PublicKey, SocketAddr)>;
+        tracing::info!("----------- debug 2 -----------");
         let quorum_infos;
+        tracing::info!("----------- debug 3 -----------");
         {
-            eigen_logging::init_logger(LogLevel::Debug);
             // Get operator states and configure allowed peers
             quorum_infos = get_operator_states()
                 .await
                 .expect("Failed to get operator states");
+
+            tracing::info!("----------- debug 4 -----------");
             recipients = Vec::new();
             let participants = quorum_infos[0].operators.clone(); //TODO: Fix hardcoded quorum_number
             if participants.is_empty() {
