@@ -8,19 +8,17 @@ use std::{env, str::FromStr, sync::Arc};
 use tokio::sync::Mutex;
 use tracing::info;
 
-use crate::bindings::counter::Counter;
-use crate::handlers::{CounterProvider, TaskCreator};
+use crate::handlers::TaskCreator;
 use crate::ingress::{TaskRequest, start_http_server};
 use commonware_eigenlayer::config::AvsDeployment;
 
 pub struct ListeningCreator {
-    counter: Counter::CounterInstance<(), CounterProvider>,
+    counter: u64,
     queue: Arc<Mutex<Vec<TaskRequest>>>,
 }
 
 impl ListeningCreator {
-    pub fn new(provider: CounterProvider, counter_address: Address) -> Self {
-        let counter = Counter::new(counter_address, provider.clone());
+    pub fn new(counter: u64) -> Self {
         Self {
             counter,
             queue: Arc::new(Mutex::new(Vec::new())),
@@ -28,8 +26,7 @@ impl ListeningCreator {
     }
 
     pub async fn get_current_number(&self) -> anyhow::Result<u64> {
-        let current_number = self.counter.number().call().await?;
-        Ok(current_number._0.to::<u64>())
+        Ok(self.counter)
     }
 
     pub async fn encode_number_call(&self, number: U256) -> Vec<u8> {
@@ -98,19 +95,19 @@ impl TaskCreator for ListeningCreator {
 pub async fn create_listening_creator_with_server(
     addr: String,
 ) -> anyhow::Result<Arc<ListeningCreator>> {
-    let http_rpc = env::var("HTTP_RPC").expect("HTTP_RPC must be set");
-    let private_key = env::var("PRIVATE_KEY").expect("PRIVATE_KEY must be set");
-    let signer = PrivateKeySigner::from_str(&private_key)?;
-    let provider = ProviderBuilder::new()
-        .wallet(signer)
-        .connect(&http_rpc)
-        .await?;
-    let deployment =
-        AvsDeployment::load().map_err(|e| anyhow::anyhow!("Failed to load deployment: {}", e))?;
-    let counter_address = deployment
-        .counter_address()
-        .map_err(|e| anyhow::anyhow!("Failed to get counter address: {}", e))?;
-    let creator = Arc::new(ListeningCreator::new(provider, counter_address));
+    // let http_rpc = env::var("HTTP_RPC").expect("HTTP_RPC must be set");
+    // let private_key = env::var("PRIVATE_KEY").expect("PRIVATE_KEY must be set");
+    // let signer = PrivateKeySigner::from_str(&private_key)?;
+    // let provider = ProviderBuilder::new()
+    //     .wallet(signer)
+    //     .connect(&http_rpc)
+    //     .await?;
+    // let deployment =
+    //     AvsDeployment::load().map_err(|e| anyhow::anyhow!("Failed to load deployment: {}", e))?;
+    // let counter_address = deployment
+    //     .counter_address()
+    //     .map_err(|e| anyhow::anyhow!("Failed to get counter address: {}", e))?;
+    let creator = Arc::new(ListeningCreator::new(0));
     let server_creator = creator.clone();
     tokio::spawn(async move {
         server_creator.start_http_server(addr).await;

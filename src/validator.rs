@@ -1,41 +1,28 @@
-use crate::{bindings::counter::Counter, wire};
+use crate::wire;
 use alloy::sol_types::SolValue;
 use alloy_primitives::U256;
-use alloy_provider::{
-    ProviderBuilder, RootProvider,
-    fillers::{BlobGasFiller, ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller},
-};
 use anyhow::Result;
 use commonware_codec::{DecodeExt, ReadExt};
 use commonware_cryptography::sha256::Digest;
 use commonware_cryptography::{Hasher, Sha256};
-use commonware_eigenlayer::config::AvsDeployment;
-use std::{env, io::Cursor};
-
-// Type alias to reduce complexity
-type CounterProvider = FillProvider<
-    JoinFill<
-        alloy_provider::Identity,
-        JoinFill<GasFiller, JoinFill<BlobGasFiller, JoinFill<NonceFiller, ChainIdFiller>>>,
-    >,
-    RootProvider,
->;
+use std::io::Cursor;
 
 pub struct Validator {
-    counter: Counter::CounterInstance<(), CounterProvider>,
+    counter: u64,
 }
 
 impl Validator {
     pub async fn new() -> Result<Self> {
-        let http_rpc = env::var("HTTP_RPC").expect("HTTP_RPC must be set");
-        let provider = ProviderBuilder::new().on_http(url::Url::parse(&http_rpc).unwrap());
-
-        let deployment = AvsDeployment::load()
-            .map_err(|e| anyhow::anyhow!("Failed to load AVS deployment: {}", e))?;
-        let counter_address = deployment
-            .counter_address()
-            .map_err(|e| anyhow::anyhow!("Failed to get counter address: {}", e))?;
-        let counter = Counter::new(counter_address, provider.clone());
+        // TODO: get it form solana
+        // let http_rpc = env::var("HTTP_RPC").expect("HTTP_RPC must be set");
+        // let provider = ProviderBuilder::new().on_http(url::Url::parse(&http_rpc).unwrap());
+        //
+        // let deployment = AvsDeployment::load()
+        //     .map_err(|e| anyhow::anyhow!("Failed to load AVS deployment: {}", e))?;
+        // let counter_address = deployment
+        //     .counter_address()
+        //     .map_err(|e| anyhow::anyhow!("Failed to get counter address: {}", e))?;
+        let counter = 0;
 
         Ok(Self { counter })
     }
@@ -65,8 +52,7 @@ impl Validator {
 
     async fn verify_message_round(&self, msg: &[u8]) -> Result<()> {
         let aggregation = wire::Aggregation::read(&mut Cursor::new(msg))?;
-        let current_number = self.counter.number().call().await?;
-        let current_number = current_number._0.to::<u64>();
+        let current_number = self.counter;
 
         if aggregation.round != current_number {
             return Err(anyhow::anyhow!(

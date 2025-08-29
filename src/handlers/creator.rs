@@ -1,5 +1,4 @@
-use crate::bindings::counter::Counter;
-use crate::handlers::{CounterProvider, TaskCreator};
+use crate::handlers::TaskCreator;
 use alloy::{
     primitives::{Address, U256},
     sol_types::SolValue,
@@ -11,18 +10,16 @@ use commonware_eigenlayer::config::AvsDeployment;
 use std::{env, str::FromStr};
 
 pub struct Creator {
-    counter: Counter::CounterInstance<(), CounterProvider>,
+    counter: u64,
 }
 
 impl Creator {
-    pub fn new(provider: CounterProvider, counter_address: Address) -> Self {
-        let counter = Counter::new(counter_address, provider.clone());
+    pub fn new(counter: u64) -> Self {
         Self { counter }
     }
 
     pub async fn get_current_number(&self) -> Result<u64> {
-        let current_number = self.counter.number().call().await?;
-        Ok(current_number._0.to::<u64>())
+        Ok(self.counter)
     }
 
     pub async fn encode_number_call(&self, number: U256) -> Vec<u8> {
@@ -55,21 +52,22 @@ impl TaskCreator for Creator {
 
 // Helper function to create a new Creator instance
 pub async fn create_creator() -> anyhow::Result<Creator> {
-    let http_rpc = env::var("HTTP_RPC").expect("HTTP_RPC must be set");
-    let private_key = env::var("PRIVATE_KEY").expect("PRIVATE_KEY must be set");
-    let signer = PrivateKeySigner::from_str(&private_key)
-        .map_err(|e| anyhow::anyhow!("Failed to parse private key: {}", e))?;
-    let provider = ProviderBuilder::new()
-        .wallet(signer)
-        .connect(&http_rpc)
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to connect provider: {}", e))?;
+    // TODO: Add provider and deployment for Solana
+    // let http_rpc = env::var("HTTP_RPC").expect("HTTP_RPC must be set");
+    // let private_key = env::var("PRIVATE_KEY").expect("PRIVATE_KEY must be set");
+    // let signer = PrivateKeySigner::from_str(&private_key)
+    //     .map_err(|e| anyhow::anyhow!("Failed to parse private key: {}", e))?;
+    // let provider = ProviderBuilder::new()
+    //     .wallet(signer)
+    //     .connect(&http_rpc)
+    //     .await
+    //     .map_err(|e| anyhow::anyhow!("Failed to connect provider: {}", e))?;
 
-    let deployment =
-        AvsDeployment::load().map_err(|e| anyhow::anyhow!("Failed to load deployment: {}", e))?;
-    let counter_address = deployment
-        .counter_address()
-        .map_err(|e| anyhow::anyhow!("Failed to get counter address: {}", e))?;
+    // let deployment =
+    //     AvsDeployment::load().map_err(|e| anyhow::anyhow!("Failed to load deployment: {}", e))?;
+    // let counter_address = deployment
+    //     .counter_address()
+    //     .map_err(|e| anyhow::anyhow!("Failed to get counter address: {}", e))?;
 
-    Ok(Creator::new(provider, counter_address))
+    Ok(Creator::new(0))
 }

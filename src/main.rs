@@ -1,4 +1,3 @@
-mod bindings;
 mod handlers;
 mod ingress;
 mod validator;
