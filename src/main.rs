@@ -208,36 +208,6 @@ async fn get_all_ncn_operator_accounts(
     Ok(accounts)
 }
 
-/// Convert G1CompressedPoint to bn254::G1PublicKey
-///
-/// This method decompresses the G1 point and extracts the coordinates
-/// to create a bn254::G1PublicKey using the create_from_g1_coordinates method.
-fn g1_compressed_to_bn254_g1_public_key(
-    g1_compressed: &G1CompressedPoint,
-) -> Result<bn254::G1PublicKey> {
-    // Decompress the G1 point to get the full coordinates
-    let g1_point = G1Point::try_from(g1_compressed)
-        .map_err(|e| anyhow::anyhow!("Failed to decompress G1 point: {:?}", e))?;
-
-    // The G1Point contains 64 bytes representing the full coordinates
-    // For BN254 G1 points, the coordinates are stored as:
-    // - X coordinate: 32 bytes (first 32 bytes)
-    // - Y coordinate: 32 bytes (last 32 bytes)
-    let coordinates = g1_point.0;
-
-    // Extract X and Y coordinates
-    let x_bytes = &coordinates[0..32];
-    let y_bytes = &coordinates[32..64];
-
-    // Convert to hex strings
-    let x_hex = format!("0x{}", hex::encode(x_bytes));
-    let y_hex = format!("0x{}", hex::encode(y_bytes));
-
-    // Create bn254::G1PublicKey from coordinates
-    bn254::G1PublicKey::create_from_g1_coordinates(&x_hex, &y_hex)
-        .ok_or_else(|| anyhow::anyhow!("Failed to create bn254::G1PublicKey from G1 coordinates"))
-}
-
 fn main() {
     // Initialize runtime
     let runtime_cfg = tokio::Config::default();
